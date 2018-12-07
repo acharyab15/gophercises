@@ -1,12 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 
-	"github.com/acharyab/gophercises/ex3-choose-adventure/cyoa"
+	"github.com/acharyab/gophercises/cyoa"
 )
 
 func main() {
@@ -20,10 +19,8 @@ func main() {
 		panic(err)
 	}
 
-	// like marshal/unmarshal for a reader object
-	d := json.NewDecoder(f)
-	var story cyoa.Story
-	if err := d.Decode(&story); err != nil {
+	story, err := cyoa.JSONStory(f)
+	if err != nil {
 		panic(err)
 	}
 

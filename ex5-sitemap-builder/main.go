@@ -1,11 +1,14 @@
 package main
 
 import (
+	"encoding/xml"
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/acharyab/gophercises/ex4-html-parser/link"
+	"github.com/acharyab/gophercises/ex5-sitemap-builder/sitemap"
 )
 
 func main() {
@@ -22,6 +25,12 @@ func main() {
 
 	links, err := link.Parse(resp.Body)
 
-	fmt.Printf("URL links: %+v", links)
+	urls, err := sitemap.GetURLFromLinks(links)
+
+	output, err := xml.MarshalIndent(urls, "  ", "    ")
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+	os.Stdout.Write(output)
 
 }

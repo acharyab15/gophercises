@@ -7,7 +7,7 @@ import (
 
 	"github.com/acharyab/gophercises/ex7-task/task/cmd"
 	"github.com/acharyab/gophercises/ex7-task/task/db"
-	"github.com/mitchellh/go-homedir"
+	homedir "github.com/mitchellh/go-homedir"
 )
 
 func main() {

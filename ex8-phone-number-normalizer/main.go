@@ -30,6 +30,32 @@ func main() {
 	defer db.Close()
 	must(db.Ping())
 	must(createPhoneNumbersTable(db))
+
+	_, err = insertPhone(db, "1234567890")
+	must(err)
+	_, err = insertPhone(db, "123 456 7891")
+	must(err)
+	_, err = insertPhone(db, "(123) 456 7892")
+	must(err)
+	_, err = insertPhone(db, "(123) 456-7893")
+	must(err)
+	_, err = insertPhone(db, "123-456-7890")
+	must(err)
+	_, err = insertPhone(db, "(123)456-7892")
+	must(err)
+	id, err := insertPhone(db, "1234567890")
+	must(err)
+	fmt.Println("id=", id)
+}
+
+func insertPhone(db *sql.DB, phone string) (int, error) {
+	statement := `INSERT INTO phone_numbers(value) VALUES($1) RETURNING id`
+	var id int
+	err := db.QueryRow(statement, phone).Scan(&id)
+	if err != nil {
+		return -1, err
+	}
+	return id, nil
 }
 
 func createPhoneNumbersTable(db *sql.DB) error {

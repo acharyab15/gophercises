@@ -35,7 +35,7 @@ func main() {
 	must(err)
 	_, err = insertPhone(db, "123 456 7891")
 	must(err)
-	_, err = insertPhone(db, "(123) 456 7892")
+	id, err := insertPhone(db, "(123) 456 7892")
 	must(err)
 	_, err = insertPhone(db, "(123) 456-7893")
 	must(err)
@@ -43,9 +43,53 @@ func main() {
 	must(err)
 	_, err = insertPhone(db, "(123)456-7892")
 	must(err)
-	id, err := insertPhone(db, "1234567890")
+	_, err = insertPhone(db, "1234567890")
 	must(err)
-	fmt.Println("id=", id)
+
+	number, err := getPhone(db, id)
+	must(err)
+	fmt.Println("Number is...", number)
+
+	phones, err := allPhones(db)
+	must(err)
+	for _, p := range phones {
+		fmt.Printf("%+v\n", p)
+	}
+}
+
+func getPhone(db *sql.DB, id int) (string, error) {
+	var number string
+	row := db.QueryRow("SELECT * FROM phone_numbers WHERE id=$1", id)
+	err := row.Scan(&id, &number)
+	if err != nil {
+		return "", err
+	}
+	return number, nil
+}
+
+type phone struct {
+	id     int
+	number string
+}
+
+func allPhones(db *sql.DB) ([]phone, error) {
+	rows, err := db.Query("SELECT id, value FROM phone_numbers")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ret []phone
+	for rows.Next() {
+		var p phone
+		if err := rows.Scan(&p.id, &p.number); err != nil {
+			return nil, err
+		}
+		ret = append(ret, p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 func insertPhone(db *sql.DB, phone string) (int, error) {

@@ -45,15 +45,3 @@ func (ai *HumanAI) Results(hand [][]deck.Card, dealer []deck.Card) {
 func main() {
 	fmt.Println("vim-go")
 }
-
-type Move func(GameState) GameState
-
-type GameState struct{}
-
-func Hit(gs GameState) GameState {
-	return gs
-}
-
-func Stand(gs GameState) GameState {
-	return gs
-}

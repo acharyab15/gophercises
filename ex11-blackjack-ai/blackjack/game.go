@@ -17,23 +17,46 @@ const (
 )
 
 // New returns a new Game
-func New() Game {
-	return Game{
+func New(opts Options) Game {
+	g := Game{
 		state:    statePlayerTurn,
 		dealerAI: dealerAI{},
 		balance:  0,
 	}
+	if opts.Decks == 0 {
+		opts.Decks = 3
+	}
+	if opts.Hands == 0 {
+		opts.Hands = 100
+	}
+	if opts.BlackjackPayout == 0.0 {
+		opts.BlackjackPayout = 1.5
+	}
+	g.nDecks = opts.Decks
+	g.nHands = opts.Hands
+	g.blackjackPayout = opts.BlackjackPayout
+	return g
+}
+
+// Options for the game that a user can specify
+type Options struct {
+	Decks           int
+	Hands           int
+	BlackjackPayout float64
 }
 
 // Game defines the individual fields required for a blackjack game
 type Game struct {
+	nDecks int
+	nHands int
 	// unexported fields
-	deck     []deck.Card
-	state    state
-	player   []deck.Card
-	dealer   []deck.Card
-	dealerAI AI
-	balance  int
+	deck            []deck.Card
+	state           state
+	player          []deck.Card
+	dealer          []deck.Card
+	dealerAI        AI
+	balance         int
+	blackjackPayout float64
 }
 
 // CurrentPlayer returns the current player's hand
@@ -87,9 +110,13 @@ func deal(g *Game) {
 // Play the game a specified number of times
 // First, it's the player turn and then the dealer turn
 func (g *Game) Play(ai AI) int {
-	g.deck = deck.New(deck.Deck(3), deck.Shuffle)
+	g.deck = nil
+	min := 52 * g.nDecks / 3 // 3 is arbitrary
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < g.nHands; i++ {
+		if len(g.deck) < min {
+			g.deck = deck.New(deck.Deck(g.nDecks), deck.Shuffle)
+		}
 		deal(g)
 
 		for g.state == statePlayerTurn {

@@ -122,31 +122,30 @@ func bet(g *Game, ai AI, shuffled bool) {
 func (g *Game) Play(ai AI) int {
 	g.deck = nil
 	min := 52 * g.nDecks / 3 // 3 is arbitrary
-
 	for i := 0; i < g.nHands; i++ {
 		shuffled := false
 		if len(g.deck) < min {
 			g.deck = deck.New(deck.Deck(g.nDecks), deck.Shuffle)
 			shuffled = true
 		}
-
 		bet(g, ai, shuffled)
 		deal(g)
-
+		if Blackjack(g.dealer...) {
+			endHand(g, ai)
+			continue
+		}
 		for g.state == statePlayerTurn {
 			hand := make([]deck.Card, len(g.player))
 			copy(hand, g.player)
 			move := ai.Play(hand, g.dealer[0])
 			move(g)
 		}
-
 		for g.state == stateDealerTurn {
 			hand := make([]deck.Card, len(g.dealer))
 			copy(hand, g.dealer)
 			move := g.dealerAI.Play(hand, g.dealer[0])
 			move(g)
 		}
-
 		endHand(g, ai)
 	}
 	return g.balance
@@ -159,22 +158,26 @@ func draw(cards []deck.Card) (deck.Card, []deck.Card) {
 // endHand performs some end of game logic
 func endHand(g *Game, ai AI) {
 	pScore, dScore := Score(g.player...), Score(g.dealer...)
+	pBlackjack, dBlackjack := Blackjack(g.player...), Blackjack(g.dealer...)
 	winnings := g.playerBet
 	// TODO(acharyab): Figure out winnings and add/subtract them
 	switch {
+	case pBlackjack && dBlackjack:
+		winnings = 0
+	case dBlackjack:
+		winnings = -winnings
+	case pBlackjack:
+		winnings = int(float64(winnings) * g.blackjackPayout)
 	case pScore > 21:
-		fmt.Println("You busted")
 		winnings = -winnings
 		g.balance--
 	case dScore > 21:
-		fmt.Println("Dealer busted")
+		// win
 	case pScore > dScore:
-		fmt.Println("You win!")
+		// win
 	case dScore > pScore:
-		fmt.Println("You lose!")
 		winnings = -winnings
 	case dScore == pScore:
-		fmt.Println("Draw")
 		winnings = 0
 	}
 	g.balance += winnings
@@ -207,6 +210,14 @@ func minScore(hand ...deck.Card) int {
 		score += min(10, int(card.Rank))
 	}
 	return score
+}
+
+// Blackjack returns true if a hand is a blackjack
+func Blackjack(hand ...deck.Card) bool {
+	if len(hand) == 2 && Score(hand...) == 21 {
+		return true
+	}
+	return false
 }
 
 // Soft returns if the score of a hand is a soft score

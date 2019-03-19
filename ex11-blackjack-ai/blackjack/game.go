@@ -47,16 +47,20 @@ type Options struct {
 
 // Game defines the individual fields required for a blackjack game
 type Game struct {
-	nDecks int
-	nHands int
 	// unexported fields
-	deck            []deck.Card
-	state           state
-	player          []deck.Card
-	dealer          []deck.Card
-	dealerAI        AI
-	balance         int
+	nDecks          int
+	nHands          int
 	blackjackPayout float64
+
+	deck  []deck.Card
+	state state
+
+	player    []deck.Card
+	playerBet int
+	balance   int
+
+	dealer   []deck.Card
+	dealerAI AI
 }
 
 // CurrentPlayer returns the current player's hand
@@ -107,6 +111,12 @@ func deal(g *Game) {
 	g.state = statePlayerTurn
 }
 
+// bet allows the player to place bets
+func bet(g *Game, ai AI, shuffled bool) {
+	bet := ai.Bet(shuffled)
+	g.playerBet = bet
+}
+
 // Play the game a specified number of times
 // First, it's the player turn and then the dealer turn
 func (g *Game) Play(ai AI) int {
@@ -114,9 +124,13 @@ func (g *Game) Play(ai AI) int {
 	min := 52 * g.nDecks / 3 // 3 is arbitrary
 
 	for i := 0; i < g.nHands; i++ {
+		shuffled := false
 		if len(g.deck) < min {
 			g.deck = deck.New(deck.Deck(g.nDecks), deck.Shuffle)
+			shuffled = true
 		}
+
+		bet(g, ai, shuffled)
 		deal(g)
 
 		for g.state == statePlayerTurn {
@@ -145,23 +159,25 @@ func draw(cards []deck.Card) (deck.Card, []deck.Card) {
 // endHand performs some end of game logic
 func endHand(g *Game, ai AI) {
 	pScore, dScore := Score(g.player...), Score(g.dealer...)
+	winnings := g.playerBet
 	// TODO(acharyab): Figure out winnings and add/subtract them
 	switch {
 	case pScore > 21:
 		fmt.Println("You busted")
+		winnings = -winnings
 		g.balance--
 	case dScore > 21:
 		fmt.Println("Dealer busted")
-		g.balance++
 	case pScore > dScore:
 		fmt.Println("You win!")
-		g.balance++
 	case dScore > pScore:
 		fmt.Println("You lose!")
-		g.balance--
+		winnings = -winnings
 	case dScore == pScore:
 		fmt.Println("Draw")
+		winnings = 0
 	}
+	g.balance += winnings
 	fmt.Println()
 	ai.Results([][]deck.Card{g.player}, g.dealer)
 	g.player = nil

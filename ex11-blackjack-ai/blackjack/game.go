@@ -1,6 +1,7 @@
 package blackjack
 
 import (
+	"errors"
 	"fmt"
 
 	deck "github.com/acharyab/gophercises/ex9-deck-of-cards"
@@ -76,27 +77,6 @@ func (g *Game) currentHand() *[]deck.Card {
 
 }
 
-// Move is either a MoveHit or a MoveStand
-type Move func(*Game)
-
-// MoveHit draws a card from the deck and
-// and appends it to the hand
-func MoveHit(g *Game) {
-	hand := g.currentHand()
-	var card deck.Card
-	card, g.deck = draw(g.deck)
-	*hand = append(*hand, card)
-	if Score(*hand...) > 21 {
-		MoveStand(g)
-	}
-}
-
-// MoveStand changes game state to the next state
-// either from player -> dealer or dealer -> handOver
-func MoveStand(g *Game) {
-	g.state++
-}
-
 // deal two cards to the players
 func deal(g *Game) {
 	g.player = make([]deck.Card, 0, 5)
@@ -138,7 +118,15 @@ func (g *Game) Play(ai AI) int {
 			hand := make([]deck.Card, len(g.player))
 			copy(hand, g.player)
 			move := ai.Play(hand, g.dealer[0])
-			move(g)
+			err := move(g)
+			switch err {
+			case errBust:
+				MoveStand(g)
+			case nil:
+				//noop
+			default:
+				panic(err)
+			}
 		}
 		for g.state == stateDealerTurn {
 			hand := make([]deck.Card, len(g.dealer))
@@ -149,6 +137,43 @@ func (g *Game) Play(ai AI) int {
 		endHand(g, ai)
 	}
 	return g.balance
+}
+
+var (
+	errBust = errors.New("hand score exceeded 21")
+)
+
+// Move is either a MoveHit or a MoveStand
+type Move func(*Game) error
+
+// MoveHit draws a card from the deck and
+// and appends it to the hand
+func MoveHit(g *Game) error {
+	hand := g.currentHand()
+	var card deck.Card
+	card, g.deck = draw(g.deck)
+	*hand = append(*hand, card)
+	if Score(*hand...) > 21 {
+		MoveStand(g)
+	}
+	return nil
+}
+
+// MoveDouble allows the user to double down
+func MoveDouble(g *Game) error {
+	if len(g.player) != 2 {
+		return errors.New("can only double on a hand with 2 cards")
+	}
+	g.playerBet *= 2
+	MoveHit(g)
+	return MoveStand(g)
+}
+
+// MoveStand changes game state to the next state
+// either from player -> dealer or dealer -> handOver
+func MoveStand(g *Game) error {
+	g.state++
+	return nil
 }
 
 func draw(cards []deck.Card) (deck.Card, []deck.Card) {

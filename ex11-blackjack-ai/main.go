@@ -7,14 +7,48 @@ import (
 	deck "github.com/acharyab/gophercises/ex9-deck-of-cards"
 )
 
-type basicAI struct{}
+type basicAI struct {
+	score int
+	seen  int
+	decks int
+}
 
 func (ai *basicAI) Bet(shuffled bool) int {
-	return 100
+	if shuffled {
+		ai.score = 0
+		ai.seen = 0
+	}
+	trueScore := ai.score / ((ai.decks*52 - ai.seen) / 52)
+	switch {
+	case trueScore >= 14:
+		return 100000
+	case trueScore >= 8:
+		return 5000
+	default:
+		return 100
+	}
 }
 
 func (ai *basicAI) Results(hands [][]deck.Card, dealer []deck.Card) {
-	// noop
+	for _, card := range dealer {
+		ai.count(card)
+	}
+	for _, hand := range hands {
+		for _, card := range hand {
+			ai.count(card)
+		}
+	}
+}
+
+func (ai *basicAI) count(card deck.Card) {
+	score := blackjack.Score(card)
+	switch {
+	case score >= 10:
+		ai.score--
+	case score <= 6:
+		ai.score++
+	}
+	ai.seen++
 }
 
 func (ai *basicAI) Play(hand []deck.Card, dealer deck.Card) blackjack.Move {
@@ -47,6 +81,7 @@ func main() {
 		BlackjackPayout: 1.5,
 	}
 	game := blackjack.New(opts)
-	winnings := game.Play(&basicAI{})
+	winnings := game.Play(&basicAI{
+		decks: 4})
 	fmt.Println(winnings)
 }

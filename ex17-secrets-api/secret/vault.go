@@ -7,7 +7,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/acharyab/gophercises/ex17-secrets-api/cipher"
+	"github.com/acharyab/gophercises/ex17-secrets-api/secret/cipher"
 )
 
 // Vault contains an encodingKey and the a map of keyValues

@@ -70,13 +70,13 @@ func main() {
 		ext := filepath.Ext(header.Filename)[1:]
 		onDisk, err := tempfile("", ext)
 		if err != nil {
-			http.Error(w, "Something went wrong", http.StatusInternalServerError)
+			http.Error(w, "Something went wrong with creating temp file", http.StatusInternalServerError)
 			return
 		}
 		defer onDisk.Close()
 		_, err = io.Copy(onDisk, file)
 		if err != nil {
-			http.Error(w, "Something went wrong", http.StatusInternalServerError)
+			http.Error(w, "Something went wrong with copying", http.StatusInternalServerError)
 			return
 		}
 		http.Redirect(w, r, "/modify/"+filepath.Base(onDisk.Name()), http.StatusFound)

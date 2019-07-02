@@ -9,7 +9,7 @@ USAGE:
     -- Say, this image is uploaded:  
     <img width="25%" height="25%" src="abc.jpg"></img>
     
-    -- 4 transformed images will be created based on 4 different primitive modes.
+    -- 4 transformed images will be created based on 4 different primitive modes.  
     <img width="20%" height="20%" src="img/006340096.jpg"></img>
     <img width="20%" height="20%" src="img/075121385.jpg"></img>
     <img width="20%" height="20%" src="img/772483146.jpg"></img>
